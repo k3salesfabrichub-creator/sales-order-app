@@ -6,15 +6,13 @@ from reportlab.lib.utils import ImageReader
 import openpyxl
 import os
 from datetime import datetime
+from textwrap import wrap
 
 st.set_page_config(page_title="Sales Order", layout="centered")
-
 st.title("📦 Sales Order Generator")
 
-# ================= ORDER NUMBER =================
 def get_order_number(prefix):
     file = "order_series.xlsx"
-
     if not os.path.exists(file):
         wb = openpyxl.Workbook()
         sheet = wb.active
@@ -38,14 +36,14 @@ def get_order_number(prefix):
 
 # ================= FORM =================
 name = st.text_input("Party Name")
-phone = st.text_input("Phone")
 address = st.text_input("Address")
 salesman = st.text_input("Salesman")
 
 order_type = st.selectbox("Order Type", ["SO","SM","SOT","VFSO","VFSM"])
-manual_no = st.text_input("Manual Order No (optional)")
+manual_no = st.text_input("Manual Order No")
 
-date = datetime.now().strftime("%d/%m/%y")
+old_order_check = st.checkbox("Old Order")
+old_order_no = st.text_input("Enter Old Order No") if old_order_check else ""
 
 # ================= FABRIC =================
 st.subheader("Fabric Setup")
@@ -59,14 +57,10 @@ rate2 = st.number_input("Rate 2", min_value=0)
 fabric3 = st.text_input("Fabric 3")
 rate3 = st.number_input("Rate 3", min_value=0)
 
-fabric_options = [f for f in [fabric1,fabric2,fabric3] if f]
+fabric_options = [f for f in [fabric1, fabric2, fabric3] if f]
 
-# ================= IMAGE UPLOAD =================
-uploaded_files = st.file_uploader(
-    "Upload Designs",
-    type=["jpg","jpeg","png"],
-    accept_multiple_files=True
-)
+# ================= IMAGE =================
+uploaded_files = st.file_uploader("Upload Designs", type=["jpg","jpeg","png"], accept_multiple_files=True)
 
 design_data = []
 
@@ -76,101 +70,114 @@ if uploaded_files:
         st.markdown(f"### Design {i+1}")
         st.image(file, width=150)
 
-        pcs = st.number_input(f"PCS {i+1}", min_value=1, key=f"pcs{i}")
+        unit = st.selectbox(f"Unit {i+1}", ["PCS","MTR"], key=f"unit{i}")
+        qty = st.number_input(f"{unit} {i+1}", min_value=1.0, key=f"qty{i}")
         fabric = st.selectbox(f"Fabric {i+1}", fabric_options, key=f"fab{i}")
         cut = st.number_input(f"Cut {i+1}", min_value=0.0, key=f"cut{i}")
 
-        mtr = pcs * cut if cut > 0 else pcs
+        mtr = qty * cut if unit=="PCS" else qty
 
         design_data.append({
             "file": file,
-            "pcs": pcs,
+            "pcs": qty if unit=="PCS" else 0,
+            "mtr": mtr,
+            "unit": unit,
             "fabric": fabric,
-            "cut": cut,
-            "mtr": mtr
+            "cut": cut
         })
 
-# ================= NOTES =================
-notes = st.text_area("IMPORTANT NOTES")
+description = st.text_area("Description")
 
 # ================= PDF =================
 def create_pdf(data, design_data):
 
-    file = f"{data['order_no']}.pdf"
-    c = canvas.Canvas(file, pagesize=A4)
-
+    filename = f"{data['order_no']}.pdf"
+    c = canvas.Canvas(filename, pagesize=A4)
     width, height = A4
 
-    def draw_header():
+    def header():
         y = height - 40
         c.drawString(40, y, f"Date: {data['date']}")
         c.drawString(40, y-20, f"ORDER NO: {data['order_no']}")
         c.drawString(40, y-40, f"Salesman: {data['salesman']}")
-        return y-70
+        if data["old_order"]:
+            c.drawString(40, y-60, f"Old Order: {data['old_order']}")
+        return y-90
 
-    y = draw_header()
+    y = header()
 
-    positions = [
-        (60, y),
-        (300, y),
-        (60, y-250),
-        (300, y-250)
-    ]
+    current_y = y
+    row_max_height = 0
+    col_index = 0
 
-    last_y = y
+    for i,d in enumerate(design_data):
 
-    for i, d in enumerate(design_data):
+        x = 60 if col_index % 2 == 0 else 300
+        base_y = current_y
 
-        if i > 0 and i % 4 == 0:
-            c.showPage()
-            y = draw_header()
-
-        x, base_y = positions[i % 4]
-        last_y = base_y
-
-        # SERIAL
-        c.drawString(x, base_y+12, f"{i+1}.")
-
-        # IMAGE (NO STRETCH)
         img = Image.open(d["file"])
-        img.thumbnail((180,180))
-        img_reader = ImageReader(img)
+        iw, ih = img.size
+        ratio = min(180/iw, 180/ih)
+        new_w, new_h = iw*ratio, ih*ratio
 
-        c.drawImage(img_reader, x, base_y-180)
+        required_height = new_h + 80
 
-        # TEXT
-        c.drawString(x, base_y-200, f"{d['fabric']}")
-        c.drawString(x, base_y-215, f"PCS: {d['pcs']} | Cut: {d['cut']}")
-        c.drawString(x, base_y-230, f"MTR: {d['mtr']}")
-
-    # ===== NOTES SAME PAGE =====
-    if notes:
-        note_y = last_y - 260
-
-        if note_y < 60:
+        if col_index % 2 == 0 and base_y - required_height < 40:
             c.showPage()
-            c.setFillColorRGB(1,0,0)
-            c.setFont("Helvetica-Bold", 12)
-            c.drawString(50,750,"IMPORTANT NOTES")
-            c.drawString(50,730,notes)
+            y = header()
+            current_y = y
+            row_max_height = 0
+            col_index = 0
+            x = 60
+            base_y = current_y
+
+        c.drawString(x, base_y+15, f"{i+1}.")
+        c.drawImage(ImageReader(img), x, base_y-new_h, width=new_w, height=new_h)
+
+        text_y = base_y - new_h - 10
+
+        c.drawString(x, text_y, d["fabric"])
+
+        if d["unit"]=="PCS":
+            c.drawString(x, text_y-15, f"PCS: {d['pcs']}")
+            c.drawString(x, text_y-30, f"Cut: {d['cut']}")
         else:
-            c.setFillColorRGB(1,0,0)
-            c.setFont("Helvetica-Bold", 12)
-            c.drawString(50, note_y, "IMPORTANT NOTES")
-            c.drawString(50, note_y-20, notes)
+            c.drawString(x, text_y-15, f"MTR: {d['mtr']}")
+
+        total_height = new_h + 60
+        if total_height > row_max_height:
+            row_max_height = total_height
+
+        col_index += 1
+
+        if col_index % 2 == 0:
+            current_y -= (row_max_height + 30)
+            row_max_height = 0
+
+    # ================= DESCRIPTION (FINAL SAFE) =================
+    if description:
+        c.showPage()  # 🔥 ALWAYS NEW PAGE
+
+        lines = wrap(description, 80)
+
+        c.setFillColorRGB(1,0,0)
+        c.setFont("Helvetica-Bold", 10)
+
+        y = 750
+
+        for i,line in enumerate(lines):
+            c.drawCentredString(width/2, y-(i*15), line)
 
     c.save()
-    return file
+    return filename
 
 # ================= EXCEL =================
-def save_excel(data, design_data):
-
+def save_to_excel(data, design_data):
     file = "orders.xlsx"
 
     if not os.path.exists(file):
         wb = openpyxl.Workbook()
         sheet = wb.active
-
         sheet.append([
             "Order No","Party Name","Address","Date","Salesman",
             "Fabric 1","MTR 1","Rate 1",
@@ -178,41 +185,37 @@ def save_excel(data, design_data):
             "Fabric 3","MTR 3","Rate 3",
             "Total MTR"
         ])
-    else:
-        wb = openpyxl.load_workbook(file)
-        sheet = wb.active
+        wb.save(file)
 
-    summary = {}
+    wb = openpyxl.load_workbook(file)
+    sheet = wb.active
+
+    fabrics = ["","",""]
+    mtrs = [0,0,0]
 
     for d in design_data:
-        f = d["fabric"]
-        summary[f] = summary.get(f,0) + d["mtr"]
+        if d["fabric"] in fabrics:
+            idx = fabrics.index(d["fabric"])
+            mtrs[idx] += d["mtr"]
+        else:
+            for i in range(3):
+                if fabrics[i] == "":
+                    fabrics[i] = d["fabric"]
+                    mtrs[i] = d["mtr"]
+                    break
 
-    items = list(summary.items())[:3]
-
-    while len(items) < 3:
-        items.append(("",0))
-
-    def get_rate(f):
-        if f == fabric1: return rate1
-        if f == fabric2: return rate2
-        if f == fabric3: return rate3
-        return 0
-
-    total = sum([i[1] for i in items])
+    total_mtr = sum(mtrs)
 
     sheet.append([
-        data['order_no'],
-        data['name'],
-        data['address'],
-        data['date'],
-        data['salesman'],
-
-        items[0][0],items[0][1],get_rate(items[0][0]),
-        items[1][0],items[1][1],get_rate(items[1][0]),
-        items[2][0],items[2][1],get_rate(items[2][0]),
-
-        total
+        data["order_no"],
+        data["name"],
+        data["address"],
+        data["date"],
+        data["salesman"],
+        fabrics[0], mtrs[0], "",
+        fabrics[1], mtrs[1], "",
+        fabrics[2], mtrs[2], "",
+        total_mtr
     ])
 
     wb.save(file)
@@ -220,21 +223,19 @@ def save_excel(data, design_data):
 # ================= BUTTON =================
 if st.button("🚀 Generate Order"):
 
-    if manual_no:
-        order_no = manual_no
-    else:
-        order_no = get_order_number(order_type)
+    order_no = f"{order_type} {manual_no}" if manual_no else get_order_number(order_type)
 
     data = {
         "order_no": order_no,
         "name": name,
         "address": address,
         "salesman": salesman,
-        "date": date
+        "date": datetime.now().strftime("%d/%m/%y"),
+        "old_order": old_order_no
     }
 
     pdf = create_pdf(data, design_data)
-    save_excel(data, design_data)
+    save_to_excel(data, design_data)
 
     st.success("Order Created")
 
