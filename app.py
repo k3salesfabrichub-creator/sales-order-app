@@ -51,13 +51,8 @@ old_order_no = st.text_input("Enter Old Order No") if old_order_check else ""
 st.subheader("Fabric Setup")
 
 fabric1 = st.text_input("Fabric 1")
-rate1 = st.number_input("Rate 1", min_value=0)
-
 fabric2 = st.text_input("Fabric 2")
-rate2 = st.number_input("Rate 2", min_value=0)
-
 fabric3 = st.text_input("Fabric 3")
-rate3 = st.number_input("Rate 3", min_value=0)
 
 fabric_options = [f for f in [fabric1, fabric2, fabric3] if f]
 
@@ -108,12 +103,11 @@ def create_pdf(data, design_data):
         return y-90
 
     y = header()
-
     current_y = y
     row_max_height = 0
     col_index = 0
 
-    for i,d in enumerate(design_data):
+    for i, d in enumerate(design_data):
 
         x = 60 if col_index % 2 == 0 else 300
         base_y = current_y
@@ -184,13 +178,7 @@ def save_to_excel(data, design_data):
     if not os.path.exists(file):
         wb = openpyxl.Workbook()
         sheet = wb.active
-        sheet.append([
-            "Order No","Party Name","Address","Date","Salesman",
-            "Fabric 1","MTR 1",
-            "Fabric 2","MTR 2",
-            "Fabric 3","MTR 3",
-            "Total MTR"
-        ])
+        sheet.append(["Order No","Party Name","Address","Date","Salesman","Total MTR"])
         wb.save(file)
 
     wb = openpyxl.load_workbook(file)
@@ -204,7 +192,7 @@ def save_to_excel(data, design_data):
         data["address"],
         data["date"],
         data["salesman"],
-        "", "", "", "", "", "", total_mtr
+        total_mtr
     ])
 
     wb.save(file)
