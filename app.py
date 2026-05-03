@@ -234,8 +234,9 @@ def save_to_excel(data, design_data):
 if st.button("🚀 Generate Order"):
 
     order_no = f"{order_type} {manual_no}" if manual_no else get_order_number(order_type)
+
     india = pytz.timezone('Asia/Kolkata')
-current_time = datetime.now(india)
+    current_time = datetime.now(india)
 
     data = {
         "order_no": order_no,
@@ -251,5 +252,5 @@ current_time = datetime.now(india)
 
     st.success("Order Created")
 
-    with open(pdf,"rb") as f:
+    with open(pdf, "rb") as f:
         st.download_button("Download PDF", f, file_name=pdf)
