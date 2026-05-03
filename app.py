@@ -7,10 +7,12 @@ import openpyxl
 import pytz
 from datetime import datetime
 from textwrap import wrap
+import os
 
 st.set_page_config(page_title="Sales Order", layout="centered")
 st.title("📦 Sales Order Generator")
 
+# ================= ORDER NUMBER =================
 def get_order_number(prefix):
     file = "order_series.xlsx"
     if not os.path.exists(file):
@@ -87,8 +89,8 @@ if uploaded_files:
         })
 
 description = st.text_area("Description")
-
 ref_image = st.file_uploader("Upload Reference Image", type=["png", "jpg", "jpeg"])
+
 # ================= PDF =================
 def create_pdf(data, design_data):
 
@@ -121,9 +123,7 @@ def create_pdf(data, design_data):
         ratio = min(180/iw, 180/ih)
         new_w, new_h = iw*ratio, ih*ratio
 
-        required_height = new_h + 80
-
-        if col_index % 2 == 0 and base_y - required_height < 40:
+        if col_index % 2 == 0 and base_y - (new_h + 80) < 40:
             c.showPage()
             y = header()
             current_y = y
@@ -155,29 +155,25 @@ def create_pdf(data, design_data):
             current_y -= (row_max_height + 30)
             row_max_height = 0
 
-    # ================ DESCRIPTION (FINAL SAFE) =================
+    # ===== DESCRIPTION PAGE =====
+    if description:
+        c.showPage()
 
-if description:
-    c.showPage()  # NEW PAGE
+        if ref_image:
+            image = Image.open(ref_image)
+            image_path = "temp_image.jpg"
+            image.save(image_path)
+            c.drawImage(image_path, 100, 400, width=300, height=300)
 
-    # 👉 Image add
-    if ref_image:
-        image = Image.open(ref_image)
-        image_path = "temp_image.jpg"
-        image.save(image_path)
+        lines = wrap(description, 80)
 
-        c.drawImage(image_path, 100, 400, width=300, height=300)
+        c.setFillColorRGB(1,0,0)
+        c.setFont("Helvetica-Bold", 10)
 
-    # 👉 Description text
-    lines = wrap(description, 80)
+        y = 750
+        for i, line in enumerate(lines):
+            c.drawCentredString(width/2, y-(i*15), line)
 
-    c.setFillColorRGB(1,0,0)
-    c.setFont("Helvetica-Bold", 10)
-
-    y = 750
-
-    for i, line in enumerate(lines):
-        c.drawCentredString(width/2, y-(i*15), line)
     c.save()
     return filename
 
@@ -190,9 +186,9 @@ def save_to_excel(data, design_data):
         sheet = wb.active
         sheet.append([
             "Order No","Party Name","Address","Date","Salesman",
-            "Fabric 1","MTR 1","Rate 1",
-            "Fabric 2","MTR 2","Rate 2",
-            "Fabric 3","MTR 3","Rate 3",
+            "Fabric 1","MTR 1",
+            "Fabric 2","MTR 2",
+            "Fabric 3","MTR 3",
             "Total MTR"
         ])
         wb.save(file)
@@ -200,21 +196,7 @@ def save_to_excel(data, design_data):
     wb = openpyxl.load_workbook(file)
     sheet = wb.active
 
-    fabrics = ["","",""]
-    mtrs = [0,0,0]
-
-    for d in design_data:
-        if d["fabric"] in fabrics:
-            idx = fabrics.index(d["fabric"])
-            mtrs[idx] += d["mtr"]
-        else:
-            for i in range(3):
-                if fabrics[i] == "":
-                    fabrics[i] = d["fabric"]
-                    mtrs[i] = d["mtr"]
-                    break
-
-    total_mtr = sum(mtrs)
+    total_mtr = sum([d["mtr"] for d in design_data])
 
     sheet.append([
         data["order_no"],
@@ -222,10 +204,7 @@ def save_to_excel(data, design_data):
         data["address"],
         data["date"],
         data["salesman"],
-        fabrics[0], mtrs[0], "",
-        fabrics[1], mtrs[1], "",
-        fabrics[2], mtrs[2], "",
-        total_mtr
+        "", "", "", "", "", "", total_mtr
     ])
 
     wb.save(file)
