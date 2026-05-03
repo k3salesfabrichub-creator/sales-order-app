@@ -4,7 +4,7 @@ from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 from reportlab.lib.utils import ImageReader
 import openpyxl
-import os
+import pytz
 from datetime import datetime
 from textwrap import wrap
 
@@ -88,6 +88,7 @@ if uploaded_files:
 
 description = st.text_area("Description")
 
+ref_image = st.file_uploader("Upload Reference Image", type=["png", "jpg", "jpeg"])
 # ================= PDF =================
 def create_pdf(data, design_data):
 
@@ -154,20 +155,29 @@ def create_pdf(data, design_data):
             current_y -= (row_max_height + 30)
             row_max_height = 0
 
-    # ================= DESCRIPTION (FINAL SAFE) =================
-    if description:
-        c.showPage()  # 🔥 ALWAYS NEW PAGE
+    # ================ DESCRIPTION (FINAL SAFE) =================
 
-        lines = wrap(description, 80)
+if description:
+    c.showPage()  # NEW PAGE
 
-        c.setFillColorRGB(1,0,0)
-        c.setFont("Helvetica-Bold", 10)
+    # 👉 Image add
+    if ref_image:
+        image = Image.open(ref_image)
+        image_path = "temp_image.jpg"
+        image.save(image_path)
 
-        y = 750
+        c.drawImage(image_path, 100, 400, width=300, height=300)
 
-        for i,line in enumerate(lines):
-            c.drawCentredString(width/2, y-(i*15), line)
+    # 👉 Description text
+    lines = wrap(description, 80)
 
+    c.setFillColorRGB(1,0,0)
+    c.setFont("Helvetica-Bold", 10)
+
+    y = 750
+
+    for i, line in enumerate(lines):
+        c.drawCentredString(width/2, y-(i*15), line)
     c.save()
     return filename
 
@@ -224,13 +234,15 @@ def save_to_excel(data, design_data):
 if st.button("🚀 Generate Order"):
 
     order_no = f"{order_type} {manual_no}" if manual_no else get_order_number(order_type)
+    india = pytz.timezone('Asia/Kolkata')
+current_time = datetime.now(india)
 
     data = {
         "order_no": order_no,
         "name": name,
         "address": address,
         "salesman": salesman,
-        "date": datetime.now().strftime("%d/%m/%y"),
+        "date": current_time.strftime("%d/%m/%Y"),
         "old_order": old_order_no
     }
 
