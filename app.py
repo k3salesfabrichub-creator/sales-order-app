@@ -4,15 +4,14 @@ from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 from reportlab.lib.utils import ImageReader
 import openpyxl
-import pytz
+import os
 from datetime import datetime
 from textwrap import wrap
-import os
+import pytz
 
 st.set_page_config(page_title="Sales Order", layout="centered")
 st.title("📦 Sales Order Generator")
 
-# ================= ORDER NUMBER =================
 def get_order_number(prefix):
     file = "order_series.xlsx"
     if not os.path.exists(file):
@@ -51,8 +50,13 @@ old_order_no = st.text_input("Enter Old Order No") if old_order_check else ""
 st.subheader("Fabric Setup")
 
 fabric1 = st.text_input("Fabric 1")
+rate1 = st.number_input("Rate 1", min_value=0)
+
 fabric2 = st.text_input("Fabric 2")
+rate2 = st.number_input("Rate 2", min_value=0)
+
 fabric3 = st.text_input("Fabric 3")
+rate3 = st.number_input("Rate 3", min_value=0)
 
 fabric_options = [f for f in [fabric1, fabric2, fabric3] if f]
 
@@ -84,7 +88,7 @@ if uploaded_files:
         })
 
 description = st.text_area("Description")
-ref_image = st.file_uploader("Upload Reference Image", type=["png", "jpg", "jpeg"])
+ref_image = st.file_uploader("Upload Reference Image (Optional)", type=["jpg","jpeg","png"])
 
 # ================= PDF =================
 def create_pdf(data, design_data):
@@ -103,11 +107,12 @@ def create_pdf(data, design_data):
         return y-90
 
     y = header()
+
     current_y = y
     row_max_height = 0
     col_index = 0
 
-    for i, d in enumerate(design_data):
+    for i,d in enumerate(design_data):
 
         x = 60 if col_index % 2 == 0 else 300
         base_y = current_y
@@ -117,7 +122,9 @@ def create_pdf(data, design_data):
         ratio = min(180/iw, 180/ih)
         new_w, new_h = iw*ratio, ih*ratio
 
-        if col_index % 2 == 0 and base_y - (new_h + 80) < 40:
+        required_height = new_h + 80
+
+        if col_index % 2 == 0 and base_y - required_height < 40:
             c.showPage()
             y = header()
             current_y = y
@@ -149,53 +156,41 @@ def create_pdf(data, design_data):
             current_y -= (row_max_height + 30)
             row_max_height = 0
 
-    # ===== DESCRIPTION PAGE =====
+    # ================= DESCRIPTION FIXED =================
     if description:
         c.showPage()
 
+        y = 750
+
+        # IMAGE (no stretch)
         if ref_image:
             image = Image.open(ref_image)
-            image_path = "temp_image.jpg"
-            image.save(image_path)
-            c.drawImage(image_path, 100, 400, width=300, height=300)
+            iw, ih = image.size
 
+            max_w, max_h = 300, 300
+            ratio = min(max_w/iw, max_h/ih)
+
+            new_w = iw * ratio
+            new_h = ih * ratio
+
+            x = (width - new_w) / 2
+
+            c.drawImage(ImageReader(image), x, y - new_h, width=new_w, height=new_h)
+
+            y = y - new_h - 30
+
+        # TEXT (no overlap)
         lines = wrap(description, 80)
 
         c.setFillColorRGB(1,0,0)
         c.setFont("Helvetica-Bold", 10)
 
-        y = 750
-        for i, line in enumerate(lines):
-            c.drawCentredString(width/2, y-(i*15), line)
+        for line in lines:
+            c.drawCentredString(width/2, y, line)
+            y -= 15
 
     c.save()
     return filename
-
-# ================= EXCEL =================
-def save_to_excel(data, design_data):
-    file = "orders.xlsx"
-
-    if not os.path.exists(file):
-        wb = openpyxl.Workbook()
-        sheet = wb.active
-        sheet.append(["Order No","Party Name","Address","Date","Salesman","Total MTR"])
-        wb.save(file)
-
-    wb = openpyxl.load_workbook(file)
-    sheet = wb.active
-
-    total_mtr = sum([d["mtr"] for d in design_data])
-
-    sheet.append([
-        data["order_no"],
-        data["name"],
-        data["address"],
-        data["date"],
-        data["salesman"],
-        total_mtr
-    ])
-
-    wb.save(file)
 
 # ================= BUTTON =================
 if st.button("🚀 Generate Order"):
@@ -210,14 +205,13 @@ if st.button("🚀 Generate Order"):
         "name": name,
         "address": address,
         "salesman": salesman,
-        "date": current_time.strftime("%d/%m/%Y"),
+        "date": current_time.strftime("%d/%m/%y"),
         "old_order": old_order_no
     }
 
     pdf = create_pdf(data, design_data)
-    save_to_excel(data, design_data)
 
     st.success("Order Created")
 
-    with open(pdf, "rb") as f:
+    with open(pdf,"rb") as f:
         st.download_button("Download PDF", f, file_name=pdf)
