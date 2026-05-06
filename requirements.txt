@@ -3,3 +3,5 @@ reportlab
 openpyxl
 pillow
 pytz
+gspread
+oauth2client
