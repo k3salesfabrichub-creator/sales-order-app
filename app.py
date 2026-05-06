@@ -322,8 +322,10 @@ def save_to_google_sheet(data, design_data):
         "https://www.googleapis.com/auth/drive"
     ]
 
-    creds = ServiceAccountCredentials.from_json_keyfile_name(
-        "creds.json",
+        creds_dict = json.loads(st.secrets["GOOGLE_CREDS"])
+
+    creds = ServiceAccountCredentials.from_json_keyfile_dict(
+        creds_dict,
         scope
     )
 
