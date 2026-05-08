@@ -301,7 +301,7 @@ def create_pdf(data, design_data):
 
                     desc_y -= 12
                     
-                    c.setFillColorRGB(1,0,0)
+                c.setFillColorRGB(1,0,0)
 
                 extra_desc_height = len(desc_lines) * 12
 
