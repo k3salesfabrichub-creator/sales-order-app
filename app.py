@@ -118,9 +118,9 @@ if uploaded_files:
         )
 
         cut = st.number_input(
-            f"Cut {i+1}",
+            f"Length {i+1}",
             min_value=0.0,
-            key=f"cut{i}"
+            key=f"Length{i}"
         )
         design_description = st.text_area(
     f"Description {i+1}",
