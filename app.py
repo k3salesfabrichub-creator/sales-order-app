@@ -245,6 +245,26 @@ def create_pdf(data, design_data):
                 f"Cut: {d['cut']}"
             )
 
+            extra_desc_height = 0
+
+            if d["description"]:
+
+                desc_lines = wrap(d["description"], 28)
+
+                desc_y = text_y - 45
+
+                for line in desc_lines:
+
+                    c.drawString(
+                        x,
+                        desc_y,
+                        f"Desc: {line}"
+                    )
+
+                    desc_y -= 12
+
+                extra_desc_height = len(desc_lines) * 12
+
         else:
 
             c.drawString(
@@ -253,7 +273,27 @@ def create_pdf(data, design_data):
                 f"MTR: {d['mtr']}"
             )
 
-        total_height = new_h + 60
+            extra_desc_height = 0
+
+            if d["description"]:
+
+                desc_lines = wrap(d["description"], 28)
+
+                desc_y = text_y - 30
+
+                for line in desc_lines:
+
+                    c.drawString(
+                        x,
+                        desc_y,
+                        f"Desc: {line}"
+                    )
+
+                    desc_y -= 12
+
+                extra_desc_height = len(desc_lines) * 12
+
+        total_height = new_h + 60 + extra_desc_height
 
         if total_height > row_max_height:
             row_max_height = total_height
