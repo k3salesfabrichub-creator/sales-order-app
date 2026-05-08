@@ -288,7 +288,7 @@ def create_pdf(data, design_data):
                 desc_lines = wrap(d["description"], 28)
 
                 desc_y = text_y - 30
-
+                c.setFillColorRGB(1,0,0)
                 for line in desc_lines:
 
                     c.drawString(
@@ -298,6 +298,7 @@ def create_pdf(data, design_data):
                     )
 
                     desc_y -= 12
+                    c.setFillColorRGB(1,0,0)
 
                 extra_desc_height = len(desc_lines) * 12
 
