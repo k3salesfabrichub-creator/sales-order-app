@@ -122,17 +122,22 @@ if uploaded_files:
             min_value=0.0,
             key=f"cut{i}"
         )
+        design_description = st.text_area(
+    f"Description {i+1}",
+    key=f"desc{i}"
+)
 
         mtr = qty * cut if unit == "PCS" else qty
 
         design_data.append({
-            "file": file,
-            "pcs": qty if unit == "PCS" else 0,
-            "mtr": mtr,
-            "unit": unit,
-            "fabric": fabric,
-            "cut": cut
-        })
+    "file": file,
+    "pcs": qty if unit == "PCS" else 0,
+    "mtr": mtr,
+    "unit": unit,
+    "fabric": fabric,
+    "cut": cut,
+    "description": design_description
+})
 
 description = st.text_area("Description")
 
