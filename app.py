@@ -117,11 +117,17 @@ if uploaded_files:
             key=f"fab{i}"
         )
 
-        cut = st.number_input(
-            f"Length {i+1}",
-            min_value=0.0,
-            key=f"Length{i}"
-        )
+        measurement_type = st.selectbox(
+    f"Type {i+1}",
+    ["Cut", "Length"],
+    key=f"type{i}"
+)
+
+cut = st.number_input(
+    f"{measurement_type} {i+1}",
+    min_value=0.0,
+    key=f"cut{i}"
+)
         design_description = st.text_area(
     f"Description {i+1}",
     key=f"desc{i}"
@@ -136,6 +142,7 @@ if uploaded_files:
     "unit": unit,
     "fabric": fabric,
     "cut": cut,
+    "type": measurement_type,
     "description": design_description
 })
 
@@ -242,7 +249,7 @@ def create_pdf(data, design_data):
             c.drawString(
                 x,
                 text_y-30,
-                f"Cut: {d['cut']}"
+                f"{d['type']}: {d['cut']}"
             )
 
             extra_desc_height = 0
