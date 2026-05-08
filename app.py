@@ -258,7 +258,7 @@ def create_pdf(data, design_data):
                     c.drawString(
                         x,
                         desc_y,
-                        f"Desc: {line}"
+                        line
                     )
 
                     desc_y -= 12
