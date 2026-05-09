@@ -236,6 +236,7 @@ def create_pdf(data, design_data):
         )
 
         text_y = base_y - new_h - 10
+        c.setFont("Helvetica-Bold", 12)
 
         c.drawString(x, text_y, d["fabric"])
 
@@ -289,7 +290,6 @@ def create_pdf(data, design_data):
 
                 desc_y = text_y - 30
                 
-                c.setFillColorRGB(1,0,0)
 
                 for line in desc_lines:
 
@@ -300,10 +300,11 @@ def create_pdf(data, design_data):
                     )
 
                     desc_y -= 12
-                    
-                c.setFillColorRGB(1,0,0)
 
-                extra_desc_height = len(desc_lines) * 12
+            c.setFont("Helvetica", 12)        
+                    
+
+        extra_desc_height = len(desc_lines) * 12
 
         total_height = new_h + 60 + extra_desc_height
 
