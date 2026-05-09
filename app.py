@@ -170,6 +170,8 @@ def create_pdf(data, design_data):
 
         c.setFont("Helvetica-Bold", 14)
 
+        x = width / 2 - 120
+
         c.drawCentredString(width / 2, y, f"Date: {data['date']}")
         c.drawCentredString(width / 2, y - 20, f"ORDER NO: {data['order_no']}")
         c.drawCentredString(width / 2, y - 40, f"Salesman: {data['salesman']}")
