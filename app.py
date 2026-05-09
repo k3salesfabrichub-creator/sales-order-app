@@ -11,7 +11,6 @@ import pytz
 import gspread
 import json
 from oauth2client.service_account import ServiceAccountCredentials
-from io import BytesIO
 
 st.set_page_config(page_title="Sales Order", layout="centered")
 st.title("📦 Sales Order Generator")
@@ -235,32 +234,20 @@ def create_pdf(data, design_data):
 
         c.drawString(x, base_y+15, f"{i+1}.")
 
-        buffer = BytesIO()
-
-        rgb_img = img.convert("RGB")
-
-        rgb_img.save(
-            buffer,
-            format="JPEG",
-            quality=88,
-            optimize=True
+        c.drawImage(
+            ImageReader(img),
+            x,
+            base_y-new_h,
+            width=new_w,
+            height=new_h
         )
 
-        buffer.seek(0)
+        text_y = base_y - new_h - 10
+        c.setFont("Helvetica-Bold", 12)
 
-    c.drawImage(
-        ImageReader(buffer),
-        x,
-        base_y - new_h,
-        width=new_w,
-        height=new_h
-    )            
-    text_y = base_y - new_h - 10
-    c.setFont("Helvetica-Bold", 12)
+        c.drawString(x, text_y, d["fabric"])
 
-    c.drawString(x, text_y, d["fabric"])
-
-    if d["unit"] == "PCS":
+        if d["unit"] == "PCS":
 
             c.drawString(
                 x,
@@ -296,7 +283,7 @@ def create_pdf(data, design_data):
 
                 extra_desc_height = len(desc_lines) * 12
 
-    else:
+        else:
 
             c.drawString(
                 x,
@@ -329,16 +316,16 @@ def create_pdf(data, design_data):
             c.setFont("Helvetica", 12)        
                     
 
-    extra_desc_height = len(desc_lines) * 12
+        extra_desc_height = len(desc_lines) * 12
 
-    total_height = new_h + 60 + extra_desc_height
+        total_height = new_h + 60 + extra_desc_height
 
-    if total_height > row_max_height:
+        if total_height > row_max_height:
             row_max_height = total_height
 
-    col_index += 1
+        col_index += 1
 
-    if col_index % 2 == 0:
+        if col_index % 2 == 0:
 
             current_y -= (row_max_height + 30)
 
