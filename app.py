@@ -178,6 +178,7 @@ def create_pdf(data, design_data):
 
         if data["old_order"]:
             c.drawString(
+                x,
                 width / 2,
                 y-60,
                 f"Old Order: {data['old_order']}"
