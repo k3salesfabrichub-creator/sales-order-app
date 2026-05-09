@@ -292,6 +292,7 @@ def create_pdf(data, design_data):
 
                 desc_y = text_y - 30
                 
+                c.setFont("Helvetica", 12)
 
                 for line in desc_lines:
 
