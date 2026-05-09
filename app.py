@@ -168,6 +168,8 @@ def create_pdf(data, design_data):
 
         y = height - 40
 
+        c.setFont("Helvetica-Bold", 14)
+
         c.drawCentredString(width / 2, y, f"Date: {data['date']}")
         c.drawCentredString(width / 2, y - 20, f"ORDER NO: {data['order_no']}")
         c.drawCentredString(width / 2, y - 40, f"Salesman: {data['salesman']}")
@@ -175,7 +177,6 @@ def create_pdf(data, design_data):
         if data["old_order"]:
             c.drawString(
                 width / 2,
-                40,
                 y-60,
                 f"Old Order: {data['old_order']}"
             )
