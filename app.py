@@ -264,6 +264,8 @@ def create_pdf(data, design_data):
 
                 for line in desc_lines:
 
+                    c.setFont("Helvetica", 10)
+
                     c.drawString(
                         x,
                         desc_y,
