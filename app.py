@@ -11,7 +11,6 @@ import pytz
 import gspread
 import json
 from oauth2client.service_account import ServiceAccountCredentials
-from io import BytesIO
 
 st.set_page_config(page_title="Sales Order", layout="centered")
 st.title("📦 Sales Order Generator")
@@ -236,18 +235,6 @@ def create_pdf(data, design_data):
         c.setFont("Helvetica-Bold", 12)
         c.drawString(x, base_y + 15, f"{i+1}.")
 
-        buffer = BytesIO()
-
-        rgb_img = img.convert("RGB")
-        rgb_img.save(
-            buffer,
-            format="JPEG",
-            quality=88,
-            optimize=True
-        )
-
-        buffer.seek(0)
-
     c.drawImage(
         ImageReader(img),
         x,
@@ -273,14 +260,24 @@ def create_pdf(data, design_data):
                 text_y-30,
                 f"{d['type']}: {d['cut']}"
             )
+            desc_start_y = text_y - 45
+    else:
+            c.drawString(
+                x,
+                text_y - 15,
+                f"MTR: {d['mtr']}"
+            )
+            desc_start_y = text_y - 30    
 
             extra_desc_height = 0
 
-            if d["description"]:
+    if d["description"]:
 
                 desc_lines = wrap(d["description"], 28)
 
                 desc_y = text_y - 45
+                
+                c.setFont("Helvetica", 10)
 
                 for line in desc_lines:
 
@@ -298,17 +295,17 @@ def create_pdf(data, design_data):
 
     else:
 
-            c.drawString(
+         c.drawString(
                 x,
                 text_y-15,
                 f"MTR: {d['mtr']}"
             )
 
-            c.setFont("Helvetica", 10)
+         c.setFont("Helvetica", 10)
             
-            extra_desc_height = 0
+         extra_desc_height = 0
 
-            if d["description"]:
+         if d["description"]:
 
                 desc_lines = wrap(d["description"], 28)
 
@@ -326,10 +323,10 @@ def create_pdf(data, design_data):
 
                     desc_y -= 12
 
-            c.setFont("Helvetica", 12)        
+         c.setFont("Helvetica", 12)        
                     
 
-    extra_desc_height = len(desc_lines) * 12
+         extra_desc_height = len(desc_lines) * 12
 
     total_height = new_h + 60 + extra_desc_height
 
