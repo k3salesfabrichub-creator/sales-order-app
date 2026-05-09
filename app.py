@@ -249,7 +249,7 @@ def create_pdf(data, design_data):
         buffer.seek(0)
 
     c.drawImage(
-        ImageReader(buffer),
+        ImageReader(img),
         x,
         base_y - new_h,
         width=new_w,
