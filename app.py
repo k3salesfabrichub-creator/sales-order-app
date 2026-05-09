@@ -282,6 +282,8 @@ def create_pdf(data, design_data):
                 f"MTR: {d['mtr']}"
             )
 
+            c.setFont("Helvetica", 12)
+            
             extra_desc_height = 0
 
             if d["description"]:
