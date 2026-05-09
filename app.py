@@ -11,6 +11,7 @@ import pytz
 import gspread
 import json
 from oauth2client.service_account import ServiceAccountCredentials
+from io import BytesIO
 
 st.set_page_config(page_title="Sales Order", layout="centered")
 st.title("📦 Sales Order Generator")
@@ -157,63 +158,211 @@ ref_image = st.file_uploader(
 # ================= PDF =================
 
 def create_pdf(data, design_data):
-        # Fabric name
-        c.setFont("Helvetica-Bold", 12)
-        c.drawString(x, text_y, d["fabric"])
 
-        # PCS / MTR info
-        if d["unit"] == "PCS":
-            c.drawString(x, text_y - 15, f"PCS: {d['pcs']}")
-            c.drawString(x, text_y - 30, f"{d['type']}: {d['cut']}")
-            desc_y = text_y - 50
-        else:
-            c.drawString(x, text_y - 15, f"MTR: {d['mtr']}")
-            desc_y = text_y - 35
+    filename = f"{data['order_no']}.pdf"
 
-        # Description
-        extra_desc_height = 0
+    c = canvas.Canvas(filename, pagesize=A4)
 
-        if d["description"]:
-            desc_lines = wrap(d["description"], 28)
-            c.setFont("Helvetica", 10)
+    width, height = A4
 
-            for line in desc_lines:
-                c.drawString(x, desc_y, line)
-                desc_y -= 12
+    def header():
 
-            extra_desc_height = len(desc_lines) * 12
+        y = height - 40
 
-        # Calculate block height
-        total_height = new_h + 80 + extra_desc_height
+        c.setFont("Helvetica-Bold", 14)
 
-        if total_height > row_max_height:
-            row_max_height = total_height
+        label_x = width / 2 - 120
+        value_x = width / 2 - 10
 
-        # Move to next column
-        col_index += 1
+        c.drawString(label_x, y, "Date:")
+        c.drawString(value_x, y, str(data["date"]))
 
-        # After 2 columns, move to next row
-        if col_index % 2 == 0:
-            current_y -= (row_max_height + 30)
+        c.drawString(label_x, y - 20, "ORDER NO:")
+        c.drawString(value_x, y - 20, str(data["order_no"]))
+
+        c.drawString(label_x, y - 40, "Salesman:")
+        c.drawString(value_x, y - 40, str(data["salesman"]))
+
+        if data["old_order"]:
+            c.drawString(label_x, y - 60, "Old Order:")
+            c.drawString(value_x, y - 60, str(data["old_order"]))
+
+        return y-90
+
+    y = header()
+
+    current_y = y
+
+    row_max_height = 0
+
+    col_index = 0
+
+    for i, d in enumerate(design_data):
+
+        x = 60 if col_index % 2 == 0 else 300
+
+        base_y = current_y
+
+        img = Image.open(d["file"])
+
+        iw, ih = img.size
+
+        ratio = min(180/iw, 180/ih)
+
+        new_w = iw * ratio
+        new_h = ih * ratio
+
+        required_height = new_h + 80
+
+        if (
+            col_index % 2 == 0 and
+            base_y - required_height < 40
+        ):
+
+            c.showPage()
+
+            y = header()
+
+            current_y = y
+
             row_max_height = 0
 
-    # ================= DESCRIPTION PAGE =================
+            col_index = 0
 
-        if description:
-         c.showPage()
+            x = 60
+
+            base_y = current_y
+
+        c.drawString(x, base_y+15, f"{i+1}.")
+
+        buffer = BytesIO()
+
+        rgb_img = img.convert("RGB")
+
+        rgb_img.save(
+            buffer,
+            format="JPEG",
+            quality=88,
+            optimize=True
+        )
+
+        buffer.seek(0)
+
+    c.drawImage(
+        ImageReader(buffer),
+        x,
+        base_y - new_h,
+        width=new_w,
+        height=new_h
+    )            
+    text_y = base_y - new_h - 10
+    c.setFont("Helvetica-Bold", 12)
+
+    c.drawString(x, text_y, d["fabric"])
+
+    if d["unit"] == "PCS":
+
+            c.drawString(
+                x,
+                text_y-15,
+                f"PCS: {d['pcs']}"
+            )
+
+            c.drawString(
+                x,
+                text_y-30,
+                f"{d['type']}: {d['cut']}"
+            )
+
+            extra_desc_height = 0
+
+            if d["description"]:
+
+                desc_lines = wrap(d["description"], 28)
+
+                desc_y = text_y - 45
+
+                for line in desc_lines:
+
+                    c.setFont("Helvetica", 10)
+
+                    c.drawString(
+                        x,
+                        desc_y,
+                        line
+                    )
+
+                    desc_y -= 12
+
+                extra_desc_height = len(desc_lines) * 12
+
+    else:
+
+            c.drawString(
+                x,
+                text_y-15,
+                f"MTR: {d['mtr']}"
+            )
+
+            c.setFont("Helvetica", 10)
+            
+            extra_desc_height = 0
+
+            if d["description"]:
+
+                desc_lines = wrap(d["description"], 28)
+
+                desc_y = text_y - 30
+                
+                c.setFont("Helvetica", 12)
+
+                for line in desc_lines:
+
+                    c.drawString(
+                        x,
+                        desc_y,
+                        line
+                    )
+
+                    desc_y -= 12
+
+            c.setFont("Helvetica", 12)        
+                    
+
+    extra_desc_height = len(desc_lines) * 12
+
+    total_height = new_h + 60 + extra_desc_height
+
+    if total_height > row_max_height:
+            row_max_height = total_height
+
+    col_index += 1
+
+    if col_index % 2 == 0:
+
+            current_y -= (row_max_height + 30)
+
+            row_max_height = 0
+
+    # ================= DESCRIPTION =================
+
+    if description:
+
+        c.showPage()
+
         y = 750
 
-        # Reference image
-        if ref_image:
-            image = Image.open(ref_image)
+        # IMAGE FIXED
 
-            if image.mode in ("RGBA", "P"):
-                image = image.convert("RGB")
+        if ref_image:
+
+            image = Image.open(ref_image)
 
             iw, ih = image.size
 
             max_w, max_h = 300, 300
-            ratio = min(max_w / iw, max_h / ih)
+
+            ratio = min(max_w/iw, max_h/ih)
 
             new_w = iw * ratio
             new_h = ih * ratio
@@ -230,22 +379,23 @@ def create_pdf(data, design_data):
 
             y = y - new_h - 30
 
-        # Description text
+        # DESCRIPTION TEXT
+
         lines = wrap(description, 80)
 
-        c.setFillColorRGB(1, 0, 0)
+        c.setFillColorRGB(1,0,0)
+
         c.setFont("Helvetica-Bold", 10)
 
         for line in lines:
-            c.drawCentredString(width / 2, y, line)
+
+            c.drawCentredString(width/2, y, line)
+
             y -= 15
 
-        # Reset text color to black
-        c.setFillColorRGB(0, 0, 0)
+    c.save()
 
-        c.save()
-
-        return filename
+    return filename
 
 # ================= GOOGLE SHEET =================
 
