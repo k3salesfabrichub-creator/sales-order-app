@@ -170,19 +170,21 @@ def create_pdf(data, design_data):
 
         c.setFont("Helvetica-Bold", 14)
 
-        x = width / 2 - 120
+        label_x = width / 2 - 120
+        value_x = width / 2 - 10
 
-        c.drawCentredString(width / 2, y, f"Date: {data['date']}")
-        c.drawCentredString(width / 2, y - 20, f"ORDER NO: {data['order_no']}")
-        c.drawCentredString(width / 2, y - 40, f"Salesman: {data['salesman']}")
+        c.drawString(label_x, y, "Date:")
+        c.drawString(value_x, y, str(data["date"]))
+
+        c.drawString(label_x, y - 20, "ORDER NO:")
+        c.drawString(value_x, y - 20, str(data["order_no"]))
+
+        c.drawString(label_x, y - 40, "Salesman:")
+        c.drawString(value_x, y - 40, str(data["salesman"]))
 
         if data["old_order"]:
-            c.drawString(
-                x,
-                width / 2,
-                y-60,
-                f"Old Order: {data['old_order']}"
-            )
+            c.drawString(label_x, y - 60, "Old Order:")
+            c.drawString(value_x, y - 60, str(data["old_order"]))
 
         return y-90
 
