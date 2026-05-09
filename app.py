@@ -233,12 +233,12 @@ def create_pdf(data, design_data):
 
             base_y = current_y
 
-        c.drawString(x, base_y+15, f"{i+1}.")
+        c.setFont("Helvetica-Bold", 12)
+        c.drawString(x, base_y + 15, f"{i+1}.")
 
         buffer = BytesIO()
 
         rgb_img = img.convert("RGB")
-
         rgb_img.save(
             buffer,
             format="JPEG",
@@ -256,8 +256,8 @@ def create_pdf(data, design_data):
         height=new_h
     )            
     text_y = base_y - new_h - 10
+    
     c.setFont("Helvetica-Bold", 12)
-
     c.drawString(x, text_y, d["fabric"])
 
     if d["unit"] == "PCS":
