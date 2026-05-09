@@ -251,7 +251,7 @@ def create_pdf(data, design_data):
     c.drawImage(
         ImageReader(buffer),
         x,
-        base_y - new_h
+        base_y - new_h,
         width=new_w,
         height=new_h
     )            
@@ -296,7 +296,7 @@ def create_pdf(data, design_data):
 
                 extra_desc_height = len(desc_lines) * 12
 
-            else:
+    else:
 
             c.drawString(
                 x,
@@ -329,16 +329,16 @@ def create_pdf(data, design_data):
             c.setFont("Helvetica", 12)        
                     
 
-        extra_desc_height = len(desc_lines) * 12
+    extra_desc_height = len(desc_lines) * 12
 
-        total_height = new_h + 60 + extra_desc_height
+    total_height = new_h + 60 + extra_desc_height
 
-        if total_height > row_max_height:
+    if total_height > row_max_height:
             row_max_height = total_height
 
-        col_index += 1
+    col_index += 1
 
-        if col_index % 2 == 0:
+    if col_index % 2 == 0:
 
             current_y -= (row_max_height + 30)
 
