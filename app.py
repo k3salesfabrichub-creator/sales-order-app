@@ -316,7 +316,6 @@ def create_pdf(data, design_data):
             c.setFont("Helvetica", 12)        
                     
 
-        extra_desc_height = len(desc_lines) * 12
 
         total_height = new_h + 60 + extra_desc_height
 
