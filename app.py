@@ -83,7 +83,16 @@ fabric_options = [
 
 # ================= IMAGE =================
 
+apply_all = st.checkbox("Apply Description To All Designs")
+common_description = ""
+
+if apply_all:
+    common_description = st.text_area(
+        "Common Description"
+     )   
+
 uploaded_files = st.file_uploader(
+    
     "Upload Designs",
     type=["jpg","jpeg","png"],
     accept_multiple_files=True
@@ -129,10 +138,16 @@ if uploaded_files:
            key=f"cut{i}"
         )
 
-        design_description = st.text_area(
-           f"Description {i+1}",
-           key=f"desc{i}"
-        )
+        if apply_all:
+
+            design_description = common_description
+
+        else:
+
+            design_description = st.text_area(
+                f"Description {i+1}",
+                key=f"desc{i}"
+        )              
 
         mtr = qty * cut if unit == "PCS" else qty
 
@@ -301,7 +316,7 @@ def create_pdf(data, design_data):
 
                 desc_y = text_y - 30
                 
-                c.setFont("Helvetica", 12)
+                c.setFont("Helvetica", 10)
 
                 for line in desc_lines:
 
@@ -313,7 +328,9 @@ def create_pdf(data, design_data):
 
                     desc_y -= 12
 
-            c.setFont("Helvetica", 12)        
+                extra_desc_height = len(desc_lines) * 12    
+
+            c.setFont("Helvetica", 10)        
                     
 
 
