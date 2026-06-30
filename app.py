@@ -81,22 +81,87 @@ fabric_options = [
     f for f in [fabric1, fabric2, fabric3] if f
 ]
 
-# ================= IMAGE =================
-
-apply_all = st.checkbox("Apply Description To All Designs")
-common_description = ""
-
-if apply_all:
-    common_description = st.text_area(
-        "Common Description"
-     )   
+# ================= IMAGE UPLOAD =================
 
 uploaded_files = st.file_uploader(
-    
     "Upload Designs",
     type=["jpg","jpeg","png"],
     accept_multiple_files=True
 )
+
+num_designs = len(uploaded_files) if uploaded_files else 0
+
+# ================= APPLY TO ALL CONTROLS =================
+# These set st.session_state values for every design's widget BEFORE
+# those widgets are created below, so the common value pre-fills each
+# design but the user can still edit any design individually afterward.
+
+if num_designs > 0:
+
+    st.subheader("Apply To All Designs")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        common_description = st.text_area(
+            "Common Description",
+            key="common_description"
+        )
+        if st.button("Apply Description To All"):
+            for i in range(num_designs):
+                st.session_state[f"desc{i}"] = common_description
+            st.rerun()
+
+        common_fabric = st.selectbox(
+            "Common Fabric",
+            fabric_options if fabric_options else [""],
+            key="common_fabric"
+        )
+        if st.button("Apply Fabric To All"):
+            for i in range(num_designs):
+                st.session_state[f"fab{i}"] = common_fabric
+            st.rerun()
+
+        common_unit = st.selectbox(
+            "Common Unit",
+            ["PCS","MTR"],
+            key="common_unit"
+        )
+        if st.button("Apply Unit To All"):
+            for i in range(num_designs):
+                st.session_state[f"unit{i}"] = common_unit
+            st.rerun()
+
+    with col2:
+        common_qty = st.number_input(
+            "Common Qty",
+            min_value=0.0,
+            key="common_qty"
+        )
+        if st.button("Apply Qty To All"):
+            for i in range(num_designs):
+                st.session_state[f"qty{i}"] = common_qty
+            st.rerun()
+
+        common_type = st.selectbox(
+            "Common Type",
+            ["Cut","Length"],
+            key="common_type"
+        )
+        if st.button("Apply Type To All"):
+            for i in range(num_designs):
+                st.session_state[f"type{i}"] = common_type
+            st.rerun()
+
+        common_cut = st.number_input(
+            "Common Cut/Length Value",
+            min_value=0.0,
+            key="common_cut"
+        )
+        if st.button("Apply Cut/Length To All"):
+            for i in range(num_designs):
+                st.session_state[f"cut{i}"] = common_cut
+            st.rerun()
 
 design_data = []
 
@@ -138,29 +203,23 @@ if uploaded_files:
            key=f"cut{i}"
         )
 
-        if apply_all:
-
-            design_description = common_description
-
-        else:
-
-            design_description = st.text_area(
-                f"Description {i+1}",
-                key=f"desc{i}"
-        )              
+        design_description = st.text_area(
+            f"Description {i+1}",
+            key=f"desc{i}"
+        )
 
         mtr = qty * cut if unit == "PCS" else qty
 
         design_data.append({
-    "file": file,
-    "pcs": qty if unit == "PCS" else 0,
-    "mtr": mtr,
-    "unit": unit,
-    "fabric": fabric,
-    "cut": cut,
-    "type": measurement_type,
-    "description": design_description
-})
+            "file": file,
+            "pcs": qty if unit == "PCS" else 0,
+            "mtr": mtr,
+            "unit": unit,
+            "fabric": fabric,
+            "cut": cut,
+            "type": measurement_type,
+            "description": design_description
+        })
 
 description = st.text_area("Description")
 
@@ -203,6 +262,14 @@ def create_pdf(data, design_data):
 
         return y-90
 
+    def footer(page_num):
+
+        c.setFont("Helvetica", 9)
+        c.setFillColorRGB(0, 0, 0)
+        c.drawCentredString(width / 2, 20, f"Page {page_num}")
+
+    page_num = 1
+
     y = header()
 
     current_y = y
@@ -233,7 +300,11 @@ def create_pdf(data, design_data):
             base_y - required_height < 40
         ):
 
+            footer(page_num)
+
             c.showPage()
+
+            page_num += 1
 
             y = header()
 
@@ -347,11 +418,16 @@ def create_pdf(data, design_data):
 
             row_max_height = 0
 
+    if design_data:
+        footer(page_num)
+
     # ================= DESCRIPTION =================
 
     if description:
 
         c.showPage()
+
+        page_num += 1
 
         y = 750
 
@@ -395,6 +471,8 @@ def create_pdf(data, design_data):
             c.drawCentredString(width/2, y, line)
 
             y -= 15
+
+        footer(page_num)
 
     c.save()
 
@@ -489,7 +567,7 @@ if st.button("🚀 Generate Order"):
     pdf = create_pdf(data, design_data)
 
     # SAVE TO GOOGLE SHEET
-    save_to_google_sheet(data, design_data)
+    # save_to_google_sheet(data, design_data)
 
     st.success("Order Created")
 
