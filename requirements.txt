@@ -1,7 +1,7 @@
-streamlit
-reportlab
-openpyxl
-pillow
-pytz
-gspread
-oauth2client
+streamlit==1.46.1
+reportlab==4.4.1
+openpyxl==3.1.5
+pillow==11.3.0
+pytz==2025.2
+gspread==6.2.1
+oauth2client==4.1.3
